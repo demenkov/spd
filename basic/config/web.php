@@ -6,27 +6,28 @@ $config = [
     'id' => 'basic',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
+    'defaultRoute' => 'stats',
     'components' => [
-        'request' => [
-            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
-            'cookieValidationKey' => 'rc6HVEttE4YCwpNFC3NVEh97gehSmxYg',
-        ],
+        /*'cache' => [
+            'class' => 'yii\caching\MemCache',
+            'servers' => [
+                [
+                    'host'   => 'localhost',
+                    'port'   => 11211,
+                    'weight' => 100,
+                ],
+            ],
+        ],*/
         'cache' => [
             'class' => 'yii\caching\FileCache',
+        ],
+        'request' => [
+            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
+            'cookieValidationKey' => 'rc6HVsttE4YCwpNFC3NVEh97gehSmxYg',
         ],
         'user' => [
             'identityClass' => 'app\models\User',
             'enableAutoLogin' => true,
-        ],
-        'errorHandler' => [
-            'errorAction' => 'site/error',
-        ],
-        'mailer' => [
-            'class' => 'yii\swiftmailer\Mailer',
-            // send all mails to a file by default. You have to set
-            // 'useFileTransport' to false and configure a transport
-            // for the mailer to send real emails.
-            'useFileTransport' => true,
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
@@ -38,6 +39,10 @@ $config = [
             ],
         ],
         'db' => require(__DIR__ . '/db.php'),
+        'urlManager' => [
+            'enablePrettyUrl' => true,
+            'showScriptName' => false,
+        ],
     ],
     'params' => $params,
 ];
