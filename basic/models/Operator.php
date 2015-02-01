@@ -15,7 +15,6 @@ use Yii;
  */
 class Operator extends \yii\db\ActiveRecord
 {
-    const CACHE_TIME = 60; //default cache time for operator
     /**
      * @inheritdoc
      */
@@ -55,20 +54,31 @@ class Operator extends \yii\db\ActiveRecord
     {
         return $this->hasMany(Click::className(), ['operator_id' => 'id']);
     }
-
-    public static function getOperatorByIp($ip) {
+    /**
+     * Get operator identifier by ip address.
+     * @param string $ip 
+     * @return int
+     */
+    public static function getOperatorId($ip) {
         $map = static::getMap();
         foreach ($map as $key => $id) {
             list($range, $netmask) = explode('/', $key, 2);
             if (static::ipInRange($ip, $range, $netmask)) {
-                return Operator::findOne($id);
+                return $id;
             }
         }
-
+        return FALSE;
     }
+    /**
+     * Save operators in database and map it into cache.
+     * @param bool $update 
+     * @return array
+     */
     public static function getMap($update = FALSE) {
         $key = 'operators';
+        //try to load fromcache if it isn't update
         if ($update || ($map = Yii::$app->cache->get($key)) === FALSE) {
+            //replace with real data loading
             $loadedJsonOperators = '[{"name": "Operator name","country_code": "RU","subnets": ["5.44.32.0/21","176.28.80.0/21","77.244.112.0/20","5.191.0.0/16"]},{"name": "Internal","country_code": "RU","subnets": ["127.0.0.1/32"]}]';
             $operators = json_decode($loadedJsonOperators);
             $map = [];
@@ -77,10 +87,12 @@ class Operator extends \yii\db\ActiveRecord
                     'name' => $operator->name,
                     'country' => $operator->country_code,
                 ];
+                //save new operators into db
                 if (empty($existsOperator = Operator::findOne($params))) {
                     $existsOperator = new Operator($params);
                     $existsOperator->save();
                 }
+                //fill map with operator subnets
                 foreach ($operator->subnets as $subnet) {
                     $map[$subnet] = $existsOperator->id;
                 }
@@ -89,12 +101,22 @@ class Operator extends \yii\db\ActiveRecord
         }
         return $map;
     }
+    /**
+     * Check ip in network range.
+     * @param string $ip 
+     * @param string $range 
+     * @param string $mask 
+     * @return bool
+     */
     public static function ipInRange($ip, $range, $mask) {
-        // $range is in IP/CIDR format eg 127.0.0.1/24
         $wildcard_decimal = pow(2,(32 - $mask)) - 1;
         $netmask_decimal = ~ $wildcard_decimal;
         return ((ip2long($ip) & $netmask_decimal) == (ip2long($range) & $netmask_decimal));
     }
+    /**
+     * Country list ISO 3166-2 officially assigned
+     * @return array
+     */
     public static function countryList() {
         $countries = [
             'AD' => Yii::t('app', "Andorra"),

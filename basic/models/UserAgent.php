@@ -52,21 +52,29 @@ class UserAgent extends \yii\db\ActiveRecord
     {
        return $this->hasMany(Click::className(), ['user_agent_id' => 'id']);
     }
-
-    public static function get() {
+    /**
+     * Get user agent identifier.
+     * @return int
+     */
+    public static function getUserAgentId() {
         $params = [
             'hash' => md5(Yii::$app->request->userAgent),
         ];
-        $userAgent = Yii::$app->cache->get($params['hash']);
-        if ($userAgent === false) {
+        //try to load from cache
+        $userAgentId = Yii::$app->cache->get($params['hash']);
+        if ($userAgentId === false) {
+            //try to find in database
             if (empty($userAgent = UserAgent::findOne($params))) {
+                //save new agent
                 $params['name'] = Yii::$app->request->userAgent;
                 $userAgent = new UserAgent($params);
                 $userAgent->save();
             }
+            $userAgentId = $userAgent->id;
+            //put in cache
             $cacheTime = Yii::$app->params['userAgentCacheTime'] ?: static::CACHE_TIME;
-            Yii::$app->cache->set($params['hash'], $userAgent, $cacheTime);
+            Yii::$app->cache->set($params['hash'], $userAgentId, $cacheTime);
         }
-        return $userAgent;
+        return $userAgentId;
     }
 }

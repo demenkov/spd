@@ -14,6 +14,7 @@ use yii\grid\GridView;
 <?= $form->field($searchForm, 'country')->dropDownList(['' => ''] + Operator::countryList()) ?>
 <?= $form->field($searchForm, 'operator_id')->dropDownList(['' => ''] + $searchForm->operators)->label(Yii::t('app', 'Operator')) ?>
 <?= $form->field($searchForm, 'partner_id')->hiddenInput()->label('') ?>
+<?= $form->field($searchForm, 'timestamp')->hiddenInput()->label('') ?>
 <?= Html::submitButton(Yii::t('app', 'Filter'), ['class' => 'btn btn-success',]) ?>
 <?php $form->end(); ?>
 <?= Gridview::widget([
@@ -21,16 +22,10 @@ use yii\grid\GridView;
 	'columns' => [
 		[
 			'label' => Yii::t('app', 'Date'),
-			'attribute' => 'timestamp',
-			'format' => 'date',
+			'value' => function ($model) {return $model['timestamp'] + $model['hour']*3600;},
+			'format' => 'dateTime',
 		],
 		'clicks',
 		'transitions',
-		[
-			'value' => function($model) {
-				return Html::a(Yii::t('app', 'View'), ['stats/view-day', 'partner_id' => $model['partner_id'], 'timestamp' => $model['timestamp']]);
-			},
-			'format' => 'raw',
-		]
 	]
 ]);

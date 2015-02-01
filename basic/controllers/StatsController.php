@@ -11,37 +11,66 @@ use app\models\StatisticSearchForm;
 
 class StatsController extends Controller
 {
-	const LIFETIME = 3600;
+	/**
+	 * Save statistics about transition.
+	 * Set tracking cookie.
+	 * @param int $partner_id 
+	 * @return null
+	 */
 	public function actionIndex($partner_id)
 	{
+		//fill click params
 		$params = [
 			'partner_id'	=> $partner_id,
 			'ip'			=> Yii::$app->request->userIP,
 			'uniq'			=> (int)empty($_COOKIE['partner_id']),
 		];
-		$userAgent = UserAgent::get();
-		if (!empty($userAgent->id)) {
-			$params['user_agent_id'] = $userAgent->id;
+		$userAgentId = UserAgent::getUserAgentId();
+		if (!empty($userAgentId)) {
+			$params['user_agent_id'] = $userAgentId;
 		}
-		$operator = Operator::getOperatorByIp(Yii::$app->request->userIP);
-		if (!empty($operator)) {
-			$params['operator_id'] = $operator->id;
+		$operatorId = Operator::getOperatorId(Yii::$app->request->userIP);
+		if (!empty($operatorId)) {
+			$params['operator_id'] = $operatorId;
 		}
 		(new Click($params))->save();
-		setcookie('partner_id', $partner_id, time() + static::LIFETIME, '/');
+		//set cookie until a new hour started
+		setcookie('partner_id', $partner_id, mktime(date('H'), 59, 59) + 1, '/');
 		header("HTTP/1.0 204 No Content");
 		return;
 	}
+	/**
+	 * View all partner statistics.
+	 * @param int $partner_id 
+	 * @return mixed
+	 */
 	public function actionView($partner_id)
 	{
 		$post = Yii::$app->request->post();
 		$searchForm = new StatisticSearchForm();
 		$defaultParams[$searchForm->formName()] = [
-            'partner_id' => $partner_id,
-        ];
-        //
-        $params = $post ?: $defaultParams;
+			'partner_id' => $partner_id,
+		];
+		$params = $post ?: $defaultParams;
 		$dataProvider = $searchForm->getPartnerData($params);
 		return $this->render('view', compact('searchForm', 'dataProvider'));
+	}
+	/**
+	 * View daily statistics.
+	 * @param int $partner_id 
+	 * @param int $timestamp 
+	 * @return mixed
+	 */
+	public function actionViewDay($partner_id, $timestamp)
+	{
+		$post = Yii::$app->request->post();
+		$searchForm = new StatisticSearchForm();
+		$defaultParams[$searchForm->formName()] = [
+			'partner_id' => $partner_id,
+			'timestamp' => $timestamp,
+		];
+		$params = $post ?: $defaultParams;
+		$dataProvider = $searchForm->getDailyData($params);
+		return $this->render('view-day', compact('searchForm', 'dataProvider'));
 	}
 }

@@ -73,7 +73,9 @@ class Click extends ActiveRecord
     {
         return $this->hasOne(UserAgent::className(), ['id' => 'user_agent_id']);
     }
-
+    /**
+     * @inheritdoc
+     */
     public function behaviors()
     {
         return [
